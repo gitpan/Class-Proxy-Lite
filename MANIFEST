@@ -1,0 +1,10 @@
+Build.PL
+Changes
+MANIFEST
+MANIFEST.SKIP
+META.yml
+Makefile.PL
+README
+lib/Class/Proxy/Lite.pm
+t/proxy.t
+t/pod.t
