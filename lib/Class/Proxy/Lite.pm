@@ -3,10 +3,11 @@ package Class::Proxy::Lite;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '1.00';
+$VERSION = '1.01';
 
-use constant TOKEN => 0;
+use constant TOKEN    => 0;
 use constant RESOLVER => 1;
+use constant CACHED   => 2;
 
 sub AUTOLOAD {
 	my $self_or_class = shift();
@@ -27,10 +28,11 @@ sub AUTOLOAD {
 			unless $method eq 'new'
 			and UNIVERSAL::isa($self_or_class, __PACKAGE__);
 		# --- Create a proxy
-		my ($token, $resolver) = @_;
+		my ($token, $resolver, $cached) = @_;
 		my @self;
-		$self[TOKEN] = $token;
+		$self[TOKEN]    = $token;
 		$self[RESOLVER] = $resolver;
+		$self[CACHED]   = $cached if defined $cached;
 		return bless \@self, $self_or_class;
 	}
 	
@@ -40,7 +42,14 @@ sub AUTOLOAD {
 		and $self_or_class ne 'Class::Proxy::Lite';
 	
 	# --- Resolve the token
-	my $target = $self_or_class->[RESOLVER]->($self_or_class->[TOKEN]);
+    my ($token, $resolver, $cached) = @$self_or_class[TOKEN, RESOLVER, CACHED];
+    my $target;
+	if ($cached) {
+        $target = $$cached ||= $resolver->($token);
+	}
+	else {
+	    $target = $resolver->($token);
+	}
 	die "Couldn't resolve proxy target"
 		unless defined $target and ref $target;
 
@@ -70,7 +79,10 @@ Class::Proxy::Lite - Simple, lightweight object proxies
 =head1 SYNOPSIS
 
     # Make a proxy to a particular object
-    $proxy = Class::Proxy::Lite->new($token, $resolver);
+    $proxy = Class::Proxy::Lite->new($token, \&resolver);
+    
+    # Make a caching proxy
+    $proxy = Class::Proxy::Lite->new($token, \&resolver, \$cache);
 
     # Methods invoked on the proxy are passed to the target object
     $proxy->foo(...);
@@ -91,19 +103,26 @@ resolved each time a method call is made on the proxy.
 
 =head2 new
 
-    $proxy = Class::Proxy::Lite->new($token, $resolver);
+    $proxy = Class::Proxy::Lite->new($token, \&resolver);
+    $proxy = Class::Proxy::Lite->new($token, \&resolver, \$cache);
 
 Construct a proxy.  The resolver is expected to return an object exactly
 equivalent (if not identical) to the desired target object.  This constraint
 can't be formally enforced by this module, so your resolver must be written
 in such a way as to meet the constraint itself.
 
+If you want one-time resolution, you may pass a reference to an undefined scalar
+variable as a third argument to the C<new> method; this will be used to cache
+the target object the first time it's resolved, and as a result the target
+object won't need to be resolved again.  Or you might pass a reference to a tied
+variable that implements caching with some sort of expiry.
+
 (There's a lot of room for clever hacks here.  For instance, you could use a
 resolver that returns a different object each time it's called.  Also,
 consider passing a closure as the resolver rather than a plain old reference
 to a function.)
 
-B<NOTE:> Strictly speaking, this method doesn't exist as such: it isn't
+B<NOTE:> Strictly speaking, the method C<new> doesn't exist as such: it isn't
 actually defined.  Instead, it's emulated using C<AUTOLOAD> (see below) --
 B<< but only when called as a class method! >>  This way, your target
 objects' class(es) can safely implement a method C<new> that can be called
@@ -195,7 +214,7 @@ proxy capabilities.
 
 =head1 VERSION
 
-1.00
+1.01
 
 =head1 AUTHOR
 

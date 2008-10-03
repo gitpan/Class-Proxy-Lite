@@ -1,6 +1,9 @@
 Change log for Class::Proxy::Lite
 =================================
 
+1.01 Mon 25 Jun 2007
+   - Add caching capability
+
 1.00 Tue 29 Apr 2003
    - Polished up distribution bits.
    - First public release.

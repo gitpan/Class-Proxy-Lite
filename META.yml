@@ -1,10 +1,16 @@
---- #YAML:1.0
+---
 name: Class-Proxy-Lite
-version: 1.00
+version: 1.01
+author: []
+abstract: 'Simple, lightweight object proxies'
 license: perl
-distribution_type: module
-requires: {}
-recommends: {}
-build_requires: {}
-conflicts: {}
-generated_by: Module::Build version 0.16
+resources:
+  license: http://dev.perl.org/licenses/
+provides:
+  Class::Proxy::Lite:
+    file: lib/Class/Proxy/Lite.pm
+    version: 1.01
+generated_by: Module::Build version 0.2808
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2
